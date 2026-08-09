@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Reference Archive</title>
+<meta name="theme-color" content="#F3EEE3" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Archive" />
+<style>
+  :root{
+    --paper:#F3EEE3; --paper-dark:#E7DFCC; --fold:#DCD0B4;
+    --ink:#3B3229; --ink-soft:#7A7061; --stamp:#B0512F;
+    --sage:#748059; --card:#FFFDF8; --line:#DAD0B8; --danger:#A8442E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Pretendard',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .serif{ font-family:Georgia,'Noto Serif KR',serif; }
+  .mono{ font-family:'IBM Plex Mono','Courier New',monospace; }
+  button{ font:inherit; cursor:pointer; background:none; border:none; color:inherit; }
+  input,textarea{ font:inherit; color:inherit; }
+  img{ max-width:100%; display:block; }
+
+  header.app-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--paper); z-index:10;
+  }
+  .brand{ display:flex; align-items:baseline; gap:6px; }
+  .brand b{ font-size:17px; letter-spacing:.02em; }
+  .brand span{ font-size:11px; color:var(--stamp); }
+
+  .tabs{ display:flex; gap:2px; padding:2px; background:var(--paper-dark); border-radius:6px; }
+  .tabs button{ display:flex; align-items:center; gap:6px; padding:7px 11px; border-radius:5px; font-size:12.5px; color:var(--ink-soft); }
+  .tabs button.active{ background:var(--card); color:var(--ink); box-shadow:0 1px 2px rgba(59,50,41,.08); }
+
+  .btn-primary{ display:flex; align-items:center; gap:6px; padding:8px 13px; background:var(--ink); color:#fff; border-radius:6px; font-size:12.5px; }
+  .btn-ghost{ padding:8px; border-radius:6px; color:var(--ink-soft); }
+  .btn-ghost:hover{ background:rgba(0,0,0,.05); }
+
+  main{ max-width:760px; margin:0 auto; padding:22px 18px 60px; }
+
+  /* calendar */
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .cal-head h2{ margin:0; font-size:22px; letter-spacing:.07em; font-weight:700; }
+  .cal-head h2 em{ font-style:normal; font-weight:400; color:var(--ink-soft); }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  @media(min-width:480px){ .cal-grid{ gap:10px; } }
+  .cal-dow{ text-align:center; font-size:10.5px; color:var(--ink-soft); letter-spacing:.08em; padding-bottom:6px; }
+  .cal-cell{ position:relative; aspect-ratio:1; border-radius:4px; border:1px solid transparent; display:flex; flex-direction:column; overflow:hidden; text-align:left; }
+  .cal-cell.has-entry{ background:var(--card); border-color:var(--line); }
+  .cal-cell.today{ border-color:var(--stamp); }
+  .cal-cell .d{ font-size:10.5px; color:var(--ink-soft); padding:3px 5px; }
+  .cal-cell.today .d{ color:var(--stamp); }
+  .cal-thumb{ flex:1; margin:0 4px 4px; border-radius:2px; overflow:hidden; }
+  .cal-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .cal-dot{ flex:1; display:flex; align-items:center; justify-content:center; }
+  .cal-dot span{ width:5px; height:5px; border-radius:99px; background:var(--sage); display:block; }
+  .cal-more{ position:absolute; bottom:3px; right:3px; font-size:9px; color:#fff; background:var(--ink); border-radius:99px; padding:0 4px; }
+
+  /* archive */
+  .search-bar{ display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--card); border:1px solid var(--line); border-radius:6px; margin-bottom:14px; }
+  .search-bar input{ border:none; outline:none; background:transparent; width:100%; font-size:13.5px; }
+  .tag-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px; }
+  .chip{ font-size:11.5px; padding:3px 10px; border-radius:99px; border:1px solid var(--line); color:var(--ink-soft); }
+  .chip.active{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .chip.active.tag{ background:var(--sage); border-color:var(--sage); }
+
+  .card-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+  .idx-card{ position:relative; text-align:left; width:100%; overflow:hidden; background:var(--card); border:1px solid var(--line); border-radius:4px; box-shadow:0 1px 2px rgba(59,50,41,.06); transition:transform .12s; }
+  .idx-card:hover{ transform:translateY(-2px); }
+  .idx-card::after{ content:''; position:absolute; top:0; right:0; width:0; height:0; border-style:solid; border-width:0 20px 20px 0; border-color:transparent var(--fold) transparent transparent; }
+  .idx-thumb{ aspect-ratio:4/3; background:var(--paper-dark); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); }
+  .idx-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .idx-body{ padding:11px; }
+  .idx-note{ font-size:13px; line-height:1.5; min-height:38px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .idx-note.empty{ color:var(--ink-soft); }
+  .idx-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+
+  .stamp{ font-family:'IBM Plex Mono','Courier New',monospace; font-size:11px; letter-spacing:.06em; color:var(--stamp); border:1.5px solid var(--stamp); border-radius:3px; padding:2px 7px; display:inline-block; transform:rotate(-6deg); background:rgba(176,81,47,.05); white-space:nowrap; }
+
+  .empty-state{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center; color:var(--ink-soft); }
+  .empty-state p{ font-size:13.5px; margin-top:10px; max-width:260px; }
+
+  /* modal */
+  .overlay{ position:fixed; inset:0; background:rgba(59,50,41,.45); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .modal{ position:relative; width:100%; max-width:420px; max-height:88vh; overflow:hidden; background:var(--card); border-radius:8px; box-shadow:0 12px 40px rgba(59,50,41,.25); display:flex; flex-direction:column; }
+  .modal.wide{ max-width:480px; }
+  .modal-close{ position:absolute; top:10px; right:10px; z-index:5; background:rgba(255,253,248,.85); border-radius:6px; padding:5px; color:var(--ink-soft); }
+  .modal-scroll{ overflow-y:auto; }
+  .modal-pad{ padding:20px; }
+
+  label.field-label{ display:block; font-family:'IBM Plex Mono','Courier New',monospace; font-size:11px; color:var(--ink-soft); letter-spacing:.05em; margin-bottom:5px; }
+  .field{ margin-bottom:16px; }
+  .field input[type=text], .field input[type=date], .field textarea{
+    width:100%; padding:9px 11px; background:var(--paper); border:1px solid var(--line); border-radius:4px; outline:none; font-size:13.5px;
+  }
+  .field textarea{ resize:none; line-height:1.6; }
+  .dropzone{ margin-top:2px; min-height:140px; border:1.5px dashed var(--line); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; text-align:center; color:var(--ink-soft); }
+  .dropzone.drag{ border-color:var(--sage); background:rgba(116,128,89,.06); }
+  .dropzone img{ max-height:220px; width:100%; object-fit:contain; }
+  .dropzone .hint{ padding:28px 16px; font-size:12.5px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .remove-img{ margin-top:6px; font-size:12px; color:var(--danger); }
+
+  .form-actions{ display:flex; justify-content:flex-end; gap:8px; padding-top:4px; }
+  .btn-plain{ padding:8px 14px; font-size:13px; color:var(--ink-soft); }
+  .btn-dark{ padding:8px 14px; font-size:13px; color:#fff; background:var(--ink); border-radius:4px; }
+  .btn-dark:disabled{ opacity:.4; }
+
+  .tag-pill{ display:inline-flex; align-items:center; gap:4px; font-size:11.5px; color:var(--sage); background:rgba(116,128,89,.12); border-radius:99px; padding:3px 9px; margin:0 6px 6px 0; }
+
+  .detail-actions{ display:flex; align-items:center; gap:2px; }
+  .detail-note{ margin-top:16px; font-size:14.5px; line-height:1.75; white-space:pre-wrap; }
+  .confirm-box{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(59,50,41,.55); }
+  .confirm-card{ background:var(--card); border-radius:6px; padding:18px; width:100%; max-width:260px; }
+
+  .spinner{ width:20px; height:20px; border:2px solid var(--line); border-top-color:var(--ink-soft); border-radius:50%; animation:spin .8s linear infinite; margin:60px auto; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; font-size:12.5px; padding:9px 16px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .25s; z-index:100; }
+  .toast.show{ opacity:1; }
+
+  .menu-pop{ position:absolute; right:0; top:calc(100% + 6px); background:var(--card); border:1px solid var(--line); border-radius:6px; box-shadow:0 6px 20px rgba(59,50,41,.15); min-width:190px; overflow:hidden; z-index:20; }
+  .menu-pop button{ display:flex; align-items:center; gap:8px; width:100%; padding:10px 13px; font-size:13px; text-align:left; }
+  .menu-pop button:hover{ background:var(--paper); }
+  .menu-wrap{ position:relative; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------------------------------------------------------- */
+/* IndexedDB layer                                                   */
+/* ---------------------------------------------------------------- */
+const DB_NAME = 'referenceArchiveDB';
+const STORE = 'entries';
+let dbPromise = null;
+
+function openDB(){
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE)) {
+        const os = db.createObjectStore(STORE, { keyPath: 'id' });
+        os.createIndex('date', 'date', { unique: false });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return dbPromise;
+}
+async function dbPut(entry){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(entry);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbDelete(id){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function dbGetAll(){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbGet(id){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/* ---------------------------------------------------------------- */
+/* Helpers                                                            */
+/* ---------------------------------------------------------------- */
+const MONTH_NAMES = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+const WEEKDAYS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const pad = n => String(n).padStart(2,'0');
+const toDateKey = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
+const todayKey = () => { const t = new Date(); return toDateKey(t.getFullYear(), t.getMonth(), t.getDate()); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function resizeImage(file, maxW, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode failed'));
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function stampLabel(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return dateStr;
+  return `${MONTH_NAMES[d.getMonth()].slice(0,3)} ${pad(d.getDate())}`;
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------------------------------------------------------------- */
+/* App state                                                          */
+/* ---------------------------------------------------------------- */
+const state = {
+  view: 'calendar',
+  entries: [],
+  loading: true,
+  cursor: (() => { const t = new Date(); return { year: t.getFullYear(), month: t.getMonth() }; })(),
+  query: '',
+  activeTag: null,
+  modal: null, // {type:'form', initial} | {type:'detail', id}
+  pendingImage: null, // {full, thumb} while form open
+  menuOpen: false,
+};
+
+async function refresh(){
+  state.entries = await dbGetAll();
+  state.entries.sort((a,b) => a.date < b.date ? 1 : -1);
+  state.loading = false;
+  render();
+}
+
+/* ---------------------------------------------------------------- */
+/* Rendering                                                          */
+/* ---------------------------------------------------------------- */
+const app = document.getElementById('app');
+
+function render(){
+  app.innerHTML = `
+    ${headerHTML()}
+    <main>${state.loading ? '<div class="spinner"></div>' : (state.view === 'calendar' ? calendarHTML() : archiveHTML())}</main>
+    ${state.modal ? modalHTML() : ''}
+  `;
+  bindEvents();
+}
+
+function headerHTML(){
+  return `
+  <header class="app-header">
+    <div class="brand"><b class="serif">REFERENCE</b><span class="mono">ARCHIVE</span></div>
+    <div class="tabs">
+      <button data-act="view-calendar" class="${state.view==='calendar'?'active':''}">📅 캘린더</button>
+      <button data-act="view-archive" class="${state.view==='archive'?'active':''}">▦ 아카이브</button>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <div class="menu-wrap">
+        <button class="btn-ghost" data-act="toggle-menu">⋯</button>
+        ${state.menuOpen ? `
+        <div class="menu-pop">
+          <button data-act="export">⭳ 백업 내보내기</button>
+          <button data-act="import">⭱ 백업 가져오기</button>
+        </div>` : ''}
+      </div>
+      <button class="btn-primary" data-act="add">＋ 기록</button>
+    </div>
+  </header>`;
+}
+
+function calendarHTML(){
+  const { year, month } = state.cursor;
+  const firstOfMonth = new Date(year, month, 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const byDate = {};
+  state.entries.forEach(it => { (byDate[it.date] ||= []).push(it); });
+  const tKey = todayKey();
+
+  let cells = '';
+  for (let i=0;i<startOffset;i++) cells += `<div></div>`;
+  for (let d=1; d<=daysInMonth; d++){
+    const key = toDateKey(year, month, d);
+    const items = byDate[key];
+    const isToday = key === tKey;
+    const cls = ['cal-cell', items ? 'has-entry':'', isToday ? 'today':''].join(' ').trim();
+    let inner = `<span class="d">${pad(d)}</span>`;
+    if (items && items[0] && items[0].thumb){
+      inner += `<div class="cal-thumb"><img src="${items[0].thumb}" alt=""/></div>`;
+    } else if (items){
+      inner += `<div class="cal-dot"><span></span></div>`;
+    }
+    if (items && items.length > 1){
+      inner += `<span class="cal-more">+${items.length-1}</span>`;
+    }
+    cells += `<button class="${cls}" data-act="day" data-date="${key}">${inner}</button>`;
+  }
+
+  return `
+    <div class="cal-head">
+      <button class="btn-ghost" data-act="prev-month">‹</button>
+      <h2 class="serif">${MONTH_NAMES[month]} <em>${year}</em></h2>
+      <button class="btn-ghost" data-act="next-month">›</button>
+    </div>
+    <div class="cal-grid">
+      ${WEEKDAYS.map(w => `<div class="cal-dow mono">${w}</div>`).join('')}
+      ${cells}
+    </div>
+  `;
+}
+
+function archiveHTML(){
+  const allTags = Array.from(new Set(state.entries.flatMap(e => e.tags||[]))).slice(0,14);
+  const q = state.query.trim().toLowerCase();
+  const filtered = state.entries.filter(it => {
+    if (state.activeTag && !(it.tags||[]).includes(state.activeTag)) return false;
+    if (q){
+      const hay = `${it.note} ${(it.tags||[]).join(' ')}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const tagsRow = allTags.length ? `
+    <div class="tag-row">
+      <button class="chip ${state.activeTag===null?'active':''}" data-act="filter-tag" data-tag="">전체</button>
+      ${allTags.map(t => `<button class="chip tag ${state.activeTag===t?'active':''}" data-act="filter-tag" data-tag="${esc(t)}">#${esc(t)}</button>`).join('')}
+    </div>` : '';
+
+  const grid = filtered.length === 0 ? `
+    <div class="empty-state">
+      <div style="font-size:22px;">🗂️</div>
+      <p>${state.entries.length===0 ? '아직 저장된 자료가 없어요. 오늘의 인풋부터 기록해보세요.' : '조건에 맞는 기록이 없어요.'}</p>
+    </div>` : `
+    <div class="card-grid">
+      ${filtered.map(cardHTML).join('')}
+    </div>`;
+
+  return `
+    <div class="search-bar">
+      🔍 <input id="searchInput" type="text" placeholder="메모, 태그로 검색" value="${esc(state.query)}"/>
+    </div>
+    ${tagsRow}
+    ${grid}
+  `;
+}
+
+function cardHTML(it){
+  const noteHTML = it.note ? esc(it.note) : '<span style="color:var(--ink-soft)">메모 없음</span>';
+  const extraTag = it.tags && it.tags.length ? `<span class="mono" style="font-size:11px;color:var(--ink-soft)">#${esc(it.tags[0])}${it.tags.length>1?` +${it.tags.length-1}`:''}</span>` : '<span></span>';
+  return `
+    <button class="idx-card" data-act="open" data-id="${it.id}">
+      <div class="idx-thumb">${it.thumb ? `<img src="${it.thumb}" alt=""/>` : '🖼'}</div>
+      <div class="idx-body">
+        <div class="idx-note ${it.note?'':'empty'}">${noteHTML}</div>
+        <div class="idx-foot">
+          <span class="stamp">${stampLabel(it.date)}</span>
+          ${extraTag}
+        </div>
+      </div>
+    </button>`;
+}
+
+function modalHTML(){
+  if (state.modal.type === 'form') return formModalHTML(state.modal.initial);
+  if (state.modal.type === 'detail') return detailModalHTML();
+  return '';
+}
+
+function formModalHTML(initial){
+  const isEdit = !!(initial && initial.id);
+  const date = (initial && initial.date) || todayKey();
+  const note = (initial && initial.note) || '';
+  const tags = (initial && initial.tags) || [];
+  const img = state.pendingImage ? state.pendingImage.full : (initial && initial.image) || null;
+
+  return `
+  <div class="overlay" data-act="overlay-close">
+    <div class="modal" data-stop>
+      <button class="modal-close" data-act="close-modal">✕</button>
+      <div class="modal-scroll">
+        <div class="modal-pad">
+          <h3 class="serif" style="font-size:16px;margin:0 0 14px;">${isEdit ? '기록 수정' : '새 기록'}</h3>
+          <form id="entryForm">
+            <div class="field">
+              <label class="field-label mono">DATE</label>
+              <input type="date" name="date" value="${date}" />
+            </div>
+            <div class="field">
+              <label class="field-label mono">IMAGE</label>
+              <div class="dropzone" id="dropzone">
+                ${img ? `<img src="${img}" alt=""/>` : `<div class="hint">⬆ 클릭하거나 드래그, 또는 이미지를 붙여넣으세요 (Ctrl+V)</div>`}
+              </div>
+              <input type="file" id="fileInput" accept="image/*" style="display:none" />
+              ${img ? `<button type="button" class="remove-img" data-act="remove-image">이미지 제거</button>` : ''}
+            </div>
+            <div class="field">
+              <label class="field-label mono">NOTE</label>
+              <textarea name="note" rows="4" placeholder="오늘 본 것, 느낀 것, 기록하고 싶은 인풋을 적어두세요">${esc(note)}</textarea>
+            </div>
+            <div class="field">
+              <label class="field-label mono">TAGS</label>
+              <input type="text" name="tags" placeholder="쉼표로 구분: 픽셀아트, 색감, 레퍼런스" value="${esc(tags.join(', '))}" />
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn-plain" data-act="close-modal">취소</button>
+              <button type="submit" class="btn-dark" id="saveBtn">저장</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+let detailEntry = null;
+let confirmDeleteOpen = false;
+
+function detailModalHTML(){
+  if (!detailEntry){
+    return `
+    <div class="overlay" data-act="overlay-close">
+      <div class="modal wide" data-stop>
+        <button class="modal-close" data-act="close-modal">✕</button>
+        <div class="spinner"></div>
+      </div>
+    </div>`;
+  }
+  const e = detailEntry;
+  return `
+  <div class="overlay" data-act="overlay-close">
+    <div class="modal wide" data-stop style="position:relative;">
+      <button class="modal-close" data-act="close-modal">✕</button>
+      <div class="modal-scroll">
+        ${e.image ? `<div style="background:var(--paper-dark)"><img src="${e.image}" style="max-height:50vh;width:100%;object-fit:contain" /></div>` : ''}
+        <div class="modal-pad">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span class="stamp">${stampLabel(e.date)}</span>
+            <div class="detail-actions">
+              <button class="btn-ghost" data-act="edit-entry">✎</button>
+              <button class="btn-ghost" style="color:var(--danger)" data-act="ask-delete">🗑</button>
+            </div>
+          </div>
+          ${e.note ? `<p class="detail-note">${esc(e.note)}</p>` : ''}
+          ${e.tags && e.tags.length ? `<div style="margin-top:14px;">${e.tags.map(t => `<span class="tag-pill">#${esc(t)}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>
+      ${confirmDeleteOpen ? `
+      <div class="confirm-box">
+        <div class="confirm-card">
+          <p style="font-size:13.5px;margin:0 0 14px;">이 기록을 삭제할까요? 되돌릴 수 없어요.</p>
+          <div style="display:flex;justify-content:flex-end;gap:8px;">
+            <button class="btn-plain" data-act="cancel-delete">취소</button>
+            <button class="btn-dark" style="background:var(--danger)" data-act="confirm-delete">삭제</button>
+          </div>
+        </div>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ---------------------------------------------------------------- */
+/* Event binding                                                      */
+/* ---------------------------------------------------------------- */
+function bindEvents(){
+  app.querySelectorAll('[data-act]').forEach(el => {
+    el.addEventListener('click', onAction);
+  });
+  const search = document.getElementById('searchInput');
+  if (search){
+    search.addEventListener('input', (e) => { state.query = e.target.value; render(); preserveFocus(search); });
+  }
+  const form = document.getElementById('entryForm');
+  if (form) form.addEventListener('submit', onSaveForm);
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  if (dropzone){
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault(); dropzone.classList.remove('drag');
+      handleFile(e.dataTransfer.files[0]);
+    });
+  }
+  if (fileInput) fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+  document.addEventListener('paste', onPasteGlobal);
+}
+
+function preserveFocus(el){ el.focus(); const v = el.value; el.value=''; el.value=v; }
+
+async function onAction(e){
+  const act = e.currentTarget.dataset.act;
+  switch(act){
+    case 'view-calendar': state.view='calendar'; render(); break;
+    case 'view-archive': state.view='archive'; render(); break;
+    case 'prev-month': moveMonth(-1); break;
+    case 'next-month': moveMonth(1); break;
+    case 'day': {
+      const date = e.currentTarget.dataset.date;
+      const items = state.entries.filter(it => it.date === date);
+      if (items.length) openDetail(items[0].id); else openForm({date});
+      break;
+    }
+    case 'filter-tag': state.activeTag = e.currentTarget.dataset.tag || null; render(); break;
+    case 'add': openForm(null); break;
+    case 'open': openDetail(e.currentTarget.dataset.id); break;
+    case 'close-modal': closeModal(); break;
+    case 'overlay-close': if (e.target === e.currentTarget) closeModal(); break;
+    case 'remove-image': state.pendingImage = {full:null, thumb:null}; render(); break;
+    case 'edit-entry': openForm(detailEntry); break;
+    case 'ask-delete': confirmDeleteOpen = true; render(); break;
+    case 'cancel-delete': confirmDeleteOpen = false; render(); break;
+    case 'confirm-delete': await doDelete(detailEntry.id); break;
+    case 'toggle-menu': state.menuOpen = !state.menuOpen; render(); break;
+    case 'export': doExport(); break;
+    case 'import': doImportPrompt(); break;
+  }
+}
+
+function moveMonth(delta){
+  let { year, month } = state.cursor;
+  month += delta;
+  if (month < 0){ month = 11; year -= 1; }
+  if (month > 11){ month = 0; year += 1; }
+  state.cursor = { year, month };
+  render();
+}
+
+function openForm(initial){
+  state.pendingImage = initial && initial.image ? { full: initial.image, thumb: initial.thumb } : null;
+  state.modal = { type: 'form', initial };
+  state.menuOpen = false;
+  render();
+}
+async function openDetail(id){
+  state.modal = { type: 'detail', id };
+  detailEntry = null;
+  confirmDeleteOpen = false;
+  state.menuOpen = false;
+  render();
+  detailEntry = await dbGet(id);
+  render();
+}
+function closeModal(){
+  state.modal = null;
+  state.pendingImage = null;
+  detailEntry = null;
+  confirmDeleteOpen = false;
+  render();
+}
+
+async function handleFile(file){
+  if (!file || !file.type || !file.type.startsWith('image/')) return;
+  try{
+    const [full, thumb] = await Promise.all([resizeImage(file, 1200, 0.82), resizeImage(file, 260, 0.6)]);
+    state.pendingImage = { full, thumb };
+    render();
+  }catch(err){ console.error(err); showToast('이미지를 불러오지 못했어요'); }
+}
+function onPasteGlobal(e){
+  if (!state.modal || state.modal.type !== 'form') return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const it of items){
+    if (it.type && it.type.startsWith('image/')){
+      handleFile(it.getAsFile());
+      break;
+    }
+  }
+}
+
+async function onSaveForm(e){
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const date = fd.get('date') || todayKey();
+  const note = (fd.get('note') || '').trim();
+  const tags = (fd.get('tags') || '').split(',').map(t=>t.trim()).filter(Boolean).slice(0,8);
+  const initial = state.modal.initial;
+  const id = (initial && initial.id) || uid();
+  const image = state.pendingImage ? state.pendingImage.full : (initial ? initial.image : null);
+  const thumb = state.pendingImage ? state.pendingImage.thumb : (initial ? initial.thumb : null);
+
+  const entry = { id, date, note, tags, image: image||null, thumb: thumb||null, updatedAt: Date.now() };
+  await dbPut(entry);
+  closeModal();
+  await refresh();
+  showToast('저장했어요');
+}
+
+async function doDelete(id){
+  await dbDelete(id);
+  closeModal();
+  await refresh();
+  showToast('삭제했어요');
+}
+
+async function doExport(){
+  state.menuOpen = false;
+  const all = await dbGetAll();
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), entries: all }, null, 0)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reference-archive-backup-${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('백업 파일을 저장했어요');
+}
+
+function doImportPrompt(){
+  state.menuOpen = false;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try{
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const list = Array.isArray(parsed) ? parsed : parsed.entries;
+      if (!Array.isArray(list)) throw new Error('invalid format');
+      for (const entry of list){
+        if (entry && entry.id) await dbPut(entry);
+      }
+      await refresh();
+      showToast(`${list.length}건 가져왔어요`);
+    }catch(err){
+      console.error(err);
+      showToast('백업 파일을 읽지 못했어요');
+    }
+  };
+  input.click();
+}
+
+/* ---------------------------------------------------------------- */
+/* Init                                                                */
+/* ---------------------------------------------------------------- */
+render();
+refresh();
+
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
