@@ -1,9 +1,10 @@
-const CACHE_NAME = 'reference-archive-v1';
+const CACHE_NAME = 'reference-archive-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './pixel-quest-log.html',
 ];
 
 self.addEventListener('install', (event) => {
