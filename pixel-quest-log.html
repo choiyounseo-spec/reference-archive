@@ -201,6 +201,8 @@ body{
 .pixel-btn.secondary:active{box-shadow:0 0 0 var(--cyan-dark);}
 .pixel-btn.danger{background:var(--red);box-shadow:0 4px 0 var(--red-dark);color:#fff;}
 .pixel-btn.danger:active{box-shadow:0 0 0 var(--red-dark);}
+.pixel-btn.ghost{background:var(--panel);color:var(--text);border:2px solid var(--border);box-shadow:none;}
+.pixel-btn.ghost:active{transform:translateY(2px);}
 .pixel-btn:disabled{opacity:.35;cursor:default;}
 
 input.pixel-input{
@@ -213,6 +215,19 @@ input.pixel-input{
   outline:none;
 }
 input.pixel-input:focus{border-color:var(--cyan);}
+textarea.pixel-input{
+  font-family:'Galmuri11',monospace;
+  font-size:12px;
+  background:var(--input-bg);
+  border:2px solid var(--border);
+  color:var(--text);
+  padding:8px 10px;
+  outline:none;
+  width:100%;
+  line-height:1.6;
+  resize:vertical;
+}
+textarea.pixel-input:focus{border-color:var(--cyan);}
 
 /* scanline overlay */
 .crt::after{
@@ -269,6 +284,76 @@ input.pixel-input:focus{border-color:var(--cyan);}
   position:absolute;inset:2px;
   display:block;
 }
+
+.nav-row{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin-top:14px;
+  flex-wrap:wrap;
+}
+
+/* retro (회고) */
+.retro-toggle-wrap{margin-top:14px;}
+.retro-area{margin-top:10px;}
+.retro-area .pixel-input{margin-bottom:6px;}
+.retro-hint{font-size:9px;color:var(--text-dim);line-height:1.6;}
+
+.weekly-badge{
+  font-size:8px;
+  background:var(--cyan);
+  color:var(--bg);
+  padding:1px 5px;
+  margin-left:6px;
+  vertical-align:middle;
+  display:inline-block;
+}
+
+.modal-retro-block{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:2px solid var(--border);
+}
+.modal-retro-label{font-size:10px;color:var(--gold);letter-spacing:1px;margin-bottom:6px;}
+.modal-retro-text{font-size:11px;line-height:1.6;color:var(--text-dim);white-space:pre-wrap;}
+
+/* ---------- weekly planning page ---------- */
+.postit{
+  background:var(--card);
+  border:2px solid var(--border);
+  padding:10px;
+  margin-bottom:10px;
+}
+.postit-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+.postit-head input{flex:1;font-size:12px;padding:6px 8px;}
+.day-toggle-row{display:flex;gap:4px;flex-wrap:wrap;}
+.day-toggle-btn{
+  width:30px;height:30px;
+  font-size:10px;
+  border:2px solid var(--border);
+  background:var(--input-bg);
+  color:var(--text-dim);
+  cursor:pointer;
+  font-family:'Galmuri11',monospace;
+}
+.day-toggle-btn.active{background:var(--gold);color:var(--bg);border-color:var(--gold-dark);font-weight:bold;}
+
+.week-day-row{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);}
+.week-day-row:last-child{border-bottom:none;}
+.week-day-label{width:64px;flex-shrink:0;font-size:10px;color:var(--text-dim);line-height:1.5;}
+.week-day-label b{display:block;font-size:11px;color:var(--gold);font-weight:normal;}
+.week-day-label.today b{color:var(--gold);text-decoration:underline;}
+.week-day-chips{flex:1;display:flex;flex-wrap:wrap;gap:5px;padding-top:2px;}
+.week-chip{font-size:9px;padding:3px 7px;background:var(--card);border:1px solid var(--border);}
+.week-day-empty{font-size:9px;color:var(--text-dim);padding-top:3px;}
+
+.retro-archive-item{
+  font-size:10px;padding:8px 9px;background:var(--card);border:1px solid var(--border);
+  margin-bottom:6px;cursor:pointer;
+}
+.retro-archive-item:hover{background:var(--card-hover);}
+.retro-archive-date{color:var(--gold-dark);margin-bottom:3px;}
+.retro-archive-snippet{color:var(--text-dim);line-height:1.5;white-space:pre-wrap;}
 
 /* exp panel */
 .exp-panel{position:relative;}
@@ -494,14 +579,16 @@ footer.note{
 </head>
 <body>
 
-<div class="game-frame">
+<div class="game-frame" id="mainPage">
 
   <div class="topbar pixel-panel crt">
     <h1 class="logo">⚔ PIXEL QUEST LOG ⚔</h1>
     <div class="date-display" id="dateDisplay"></div>
     <div class="theme-picker" id="themePicker"></div>
-    <div style="margin-top:14px;">
-      <a href="index.html" target="_top" class="pixel-btn secondary" style="text-decoration:none;display:inline-block;">🗂 레퍼런스 아카이브로 이동</a>
+    <div class="nav-row">
+      <button class="pixel-btn secondary" id="goWeeklyBtn">🗂 주간 플래닝</button>
+      <button class="pixel-btn ghost" id="openRetroArchiveBtn">📖 회고 모아보기</button>
+      <a href="index.html" target="_top" class="pixel-btn ghost" style="text-decoration:none;display:inline-block;">📚 레퍼런스 아카이브로 이동</a>
     </div>
   </div>
 
@@ -522,6 +609,13 @@ footer.note{
     </div>
     <div class="quest-list" id="questList"></div>
     <div class="empty-msg" id="emptyMsg" style="display:none;">아직 등록된 퀘스트가 없습니다.<br>오늘의 주요 작업을 추가해보세요!</div>
+    <div class="retro-toggle-wrap">
+      <button class="pixel-btn ghost" id="toggleTodayRetroBtn" style="width:100%;">📝 오늘 회고 남기기</button>
+      <div class="retro-area" id="todayRetroArea" style="display:none;">
+        <textarea class="pixel-input" id="todayRetroTextarea" rows="4" placeholder="오늘 하루를 돌아보며 남기고 싶은 게 있다면 편하게 적어보세요. 안 써도 괜찮아요."></textarea>
+        <div class="retro-hint">이 회고는 날짜에 저장되며, 달력에서 해당 날짜를 눌러도 다시 볼 수 있어요.</div>
+      </div>
+    </div>
   </div>
 
   <div class="calendar-panel pixel-panel crt">
@@ -552,11 +646,61 @@ footer.note{
 
 </div>
 
+<div class="game-frame" id="weeklyPage" style="display:none;">
+
+  <div class="topbar pixel-panel crt">
+    <button class="pixel-btn secondary" id="backToMainBtn">◀ 오늘로 돌아가기</button>
+    <h1 class="logo" style="font-size:16px;margin-top:12px;">🗂 WEEKLY PLANNING BOX</h1>
+    <div class="date-display">하고 싶은 활동을 적어두고, 이번주 요일마다 배정해보세요</div>
+  </div>
+
+  <div class="pixel-panel crt">
+    <p class="board-title">▶ 하고 싶은 것들 (포스트잇)</p>
+    <div class="add-quest-row">
+      <input class="pixel-input" id="newActivityInput" placeholder="하고 싶은 활동 입력 (예: 미용실가기)" maxlength="40">
+      <button class="pixel-btn" id="addActivityBtn">+ 추가</button>
+    </div>
+    <div id="activityPoolList"></div>
+    <div class="empty-msg" id="poolEmptyMsg" style="display:none;">아직 등록된 활동이 없습니다.<br>이번주에 하고 싶은 걸 적어보세요.</div>
+  </div>
+
+  <div class="pixel-panel crt">
+    <div class="calendar-header">
+      <button class="pixel-btn secondary" id="prevWeekBtn">◀</button>
+      <span class="calendar-title" id="weekRangeTitle"></span>
+      <button class="pixel-btn secondary" id="nextWeekBtn">▶</button>
+    </div>
+    <p class="board-title">▶ 이번주 요일별 배정 현황</p>
+    <div id="weekOverview"></div>
+  </div>
+
+  <div class="pixel-panel crt">
+    <button class="pixel-btn ghost" id="toggleWeekRetroBtn" style="width:100%;">📝 이번주 회고 남기기</button>
+    <div class="retro-area" id="weekRetroArea" style="display:none;">
+      <textarea class="pixel-input" id="weekRetroTextarea" rows="4" placeholder="이번주를 돌아보며 남기고 싶은 게 있다면 편하게 적어보세요. 안 써도 괜찮아요."></textarea>
+    </div>
+  </div>
+
+  <div class="pixel-panel crt">
+    <button class="pixel-btn ghost" id="toggleWeekArchiveBtn" style="width:100%;">📖 지난 주 회고 모아보기</button>
+    <div id="weekRetroArchive" style="display:none;margin-top:10px;"></div>
+  </div>
+
+</div>
+
 <div class="modal-overlay" id="dayModal">
   <div class="modal-box pixel-panel">
     <button class="icon-btn modal-close" id="modalCloseBtn">✕</button>
     <p class="modal-title" id="modalTitle">2026-08-01</p>
     <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="retroArchiveModal">
+  <div class="modal-box pixel-panel">
+    <button class="icon-btn modal-close" id="retroArchiveCloseBtn">✕</button>
+    <p class="modal-title">📖 회고 모아보기</p>
+    <div id="retroArchiveBody"></div>
   </div>
 </div>
 
@@ -615,13 +759,15 @@ footer.note{
   function loadData(){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return {days:{}};
+      if(!raw) return {days:{}, activityPool:[], weeks:{}};
       const parsed = JSON.parse(raw);
       if(!parsed.days) parsed.days = {};
+      if(!parsed.activityPool) parsed.activityPool = [];
+      if(!parsed.weeks) parsed.weeks = {};
       return parsed;
     }catch(e){
       console.error('load failed', e);
-      return {days:{}};
+      return {days:{}, activityPool:[], weeks:{}};
     }
   }
   function saveData(){
@@ -634,6 +780,38 @@ footer.note{
 
   let data = loadData();
   if(!data.days[todayKey()]) data.days[todayKey()] = {quests:[]};
+
+  const DAY_CODES = ['mon','tue','wed','thu','fri','sat','sun'];
+  const DAY_LABELS = ['월','화','수','목','금','토','일'];
+
+  function ensureDay(dateKey){
+    if(!data.days[dateKey]) data.days[dateKey] = {quests:[]};
+    return data.days[dateKey];
+  }
+
+  function mondayOf(d){
+    const date = new Date(d);
+    const day = date.getDay(); // 0=Sun..6=Sat
+    const diff = (day===0 ? -6 : 1-day);
+    date.setDate(date.getDate()+diff);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+  function weekKeyOf(d){ return keyOf(mondayOf(d)); }
+  function dateForWeekday(mondayDate, dayIndex){
+    const d = new Date(mondayDate);
+    d.setDate(d.getDate()+dayIndex);
+    return d;
+  }
+  function ensureWeek(wk){
+    if(!data.weeks[wk]){
+      data.weeks[wk] = {assignments:{mon:[],tue:[],wed:[],thu:[],fri:[],sat:[],sun:[]}, retro:''};
+    }
+    DAY_CODES.forEach(c=>{ if(!data.weeks[wk].assignments[c]) data.weeks[wk].assignments[c] = []; });
+    return data.weeks[wk];
+  }
+
+  let viewWeekMonday = mondayOf(new Date());
 
   let viewYear, viewMonth; // 0-indexed month for calendar view
   (function(){
@@ -719,6 +897,67 @@ footer.note{
     return {current, best, totalDays, perfectDays};
   }
 
+  // ---------- weekly planning ----------
+  function addPoolActivity(text){
+    data.activityPool.push({id:uid(), text:text});
+    saveData();
+    renderWeeklyPage();
+  }
+  function deletePoolActivity(id){
+    data.activityPool = data.activityPool.filter(a=>a.id!==id);
+    // clean up any week assignments + synced quests referencing this activity
+    Object.keys(data.weeks).forEach(wk=>{
+      const monday = new Date(wk+'T00:00:00');
+      DAY_CODES.forEach((code, idx)=>{
+        const arr = data.weeks[wk].assignments[code] || [];
+        const pos = arr.indexOf(id);
+        if(pos>-1){
+          arr.splice(pos,1);
+          const dk = keyOf(dateForWeekday(monday, idx));
+          if(data.days[dk]){
+            data.days[dk].quests = data.days[dk].quests.filter(q=> !(q.weekly && q.weeklyRefId===id));
+          }
+        }
+      });
+    });
+    saveData();
+    renderWeeklyPage();
+    renderToday();
+  }
+
+  function toggleAssignment(wk, dayCode, activityId){
+    ensureWeek(wk);
+    const arr = data.weeks[wk].assignments[dayCode];
+    const idx = arr.indexOf(activityId);
+    const monday = new Date(wk+'T00:00:00');
+    const dayIdx = DAY_CODES.indexOf(dayCode);
+    const dk = keyOf(dateForWeekday(monday, dayIdx));
+    const pool = data.activityPool.find(a=>a.id===activityId);
+
+    if(idx>-1){
+      arr.splice(idx,1);
+      if(data.days[dk]){
+        data.days[dk].quests = data.days[dk].quests.filter(q=> !(q.weekly && q.weeklyRefId===activityId));
+      }
+    } else {
+      arr.push(activityId);
+      const dayObj = ensureDay(dk);
+      const exists = dayObj.quests.some(q=> q.weekly && q.weeklyRefId===activityId);
+      if(!exists && pool){
+        dayObj.quests.push({
+          id: uid(),
+          title: pool.text,
+          subtasks: [{id:uid(), text:'완료', done:false}],
+          weekly: true,
+          weeklyRefId: activityId
+        });
+      }
+    }
+    saveData();
+    renderWeeklyPage();
+    renderToday();
+  }
+
   // ---------- render: today panel ----------
   function renderToday(){
     const tKey = todayKey();
@@ -747,6 +986,12 @@ footer.note{
       const titleSpan = document.createElement('span');
       titleSpan.className = 'quest-title' + (cleared? ' done':'');
       titleSpan.textContent = q.title;
+      if(q.weekly){
+        const badge = document.createElement('span');
+        badge.className='weekly-badge';
+        badge.textContent='WEEKLY';
+        titleSpan.appendChild(badge);
+      }
       if(cleared){
         const stamp = document.createElement('span');
         stamp.className='clear-stamp';
@@ -843,7 +1088,18 @@ footer.note{
   function deleteQuest(qid){
     const tKey = todayKey();
     const arr = data.days[tKey].quests;
-    const idx = arr.findIndex(q=>q.id===qid);
+    const q = arr.find(x=>x.id===qid);
+    if(q && q.weekly){
+      const wk = weekKeyOf(new Date(tKey+'T00:00:00'));
+      const monday = mondayOf(new Date(tKey+'T00:00:00'));
+      const dayIdx = Math.round((new Date(tKey+'T00:00:00') - monday) / 86400000);
+      const code = DAY_CODES[dayIdx];
+      if(data.weeks[wk] && data.weeks[wk].assignments[code]){
+        data.weeks[wk].assignments[code] = data.weeks[wk].assignments[code].filter(id=>id!==q.weeklyRefId);
+        saveData();
+      }
+    }
+    const idx = arr.findIndex(x=>x.id===qid);
     if(idx>-1) arr.splice(idx,1);
     renderToday();
   }
@@ -942,6 +1198,19 @@ footer.note{
     if(!dayData.quests.length){
       body.innerHTML = '<div class="empty-msg">이 날은 기록된 퀘스트가 없습니다.</div>';
     }
+    if(dayData.retro && dayData.retro.trim()){
+      const retroBlock = document.createElement('div');
+      retroBlock.className = 'modal-retro-block';
+      const label = document.createElement('div');
+      label.className = 'modal-retro-label';
+      label.textContent = '📝 이 날의 회고';
+      const text = document.createElement('div');
+      text.className = 'modal-retro-text';
+      text.textContent = dayData.retro;
+      retroBlock.appendChild(label);
+      retroBlock.appendChild(text);
+      body.appendChild(retroBlock);
+    }
     modal.classList.add('open');
   }
 
@@ -983,8 +1252,268 @@ footer.note{
       now.getFullYear()+'.'+pad(now.getMonth()+1)+'.'+pad(now.getDate())+' ('+wd+')';
   }
 
+  // ---------- daily retro (오늘 회고) ----------
+  const toggleTodayRetroBtn = document.getElementById('toggleTodayRetroBtn');
+  const todayRetroArea = document.getElementById('todayRetroArea');
+  const todayRetroTextarea = document.getElementById('todayRetroTextarea');
+
+  function refreshTodayRetroButton(){
+    const today = data.days[todayKey()];
+    const hasRetro = today && today.retro && today.retro.trim();
+    toggleTodayRetroBtn.textContent = hasRetro ? '📝 오늘 회고 (작성됨) — 보기/수정' : '📝 오늘 회고 남기기';
+    todayRetroTextarea.value = (today && today.retro) || '';
+  }
+  toggleTodayRetroBtn.onclick = ()=>{
+    const opening = todayRetroArea.style.display === 'none';
+    todayRetroArea.style.display = opening ? 'block' : 'none';
+    if(opening) todayRetroTextarea.focus();
+  };
+  todayRetroTextarea.addEventListener('input', ()=>{
+    const today = data.days[todayKey()];
+    if(today){
+      today.retro = todayRetroTextarea.value;
+      saveData();
+      refreshTodayRetroButton();
+    }
+  });
+
+  // ---------- retro archive (회고 모아보기) ----------
+  function openRetroArchive(){
+    const body = document.getElementById('retroArchiveBody');
+    body.innerHTML = '';
+    const dayEntries = Object.keys(data.days)
+      .filter(k=> data.days[k].retro && data.days[k].retro.trim())
+      .sort().reverse();
+
+    if(!dayEntries.length){
+      body.innerHTML = '<div class="empty-msg">아직 남긴 회고가 없습니다.</div>';
+    } else {
+      dayEntries.forEach(k=>{
+        const item = document.createElement('div');
+        item.className='retro-archive-item';
+        const dateEl = document.createElement('div');
+        dateEl.className='retro-archive-date';
+        dateEl.textContent = k;
+        const snippet = document.createElement('div');
+        snippet.className='retro-archive-snippet';
+        const text = data.days[k].retro.trim();
+        snippet.textContent = text.length>80 ? text.slice(0,80)+'…' : text;
+        item.appendChild(dateEl);
+        item.appendChild(snippet);
+        item.onclick = ()=>{
+          document.getElementById('retroArchiveModal').classList.remove('open');
+          const st = dayStats(data.days[k]);
+          openDayModal(k, data.days[k], st);
+        };
+        body.appendChild(item);
+      });
+    }
+    document.getElementById('retroArchiveModal').classList.add('open');
+  }
+  document.getElementById('openRetroArchiveBtn').onclick = openRetroArchive;
+  document.getElementById('retroArchiveCloseBtn').onclick = ()=>{
+    document.getElementById('retroArchiveModal').classList.remove('open');
+  };
+  document.getElementById('retroArchiveModal').addEventListener('click', e=>{
+    if(e.target.id==='retroArchiveModal') e.currentTarget.classList.remove('open');
+  });
+
+  // ---------- page switching ----------
+  function showMainPage(){
+    document.getElementById('weeklyPage').style.display = 'none';
+    document.getElementById('mainPage').style.display = 'flex';
+    window.scrollTo(0,0);
+  }
+  function showWeeklyPage(){
+    document.getElementById('mainPage').style.display = 'none';
+    document.getElementById('weeklyPage').style.display = 'flex';
+    window.scrollTo(0,0);
+    renderWeeklyPage();
+  }
+  document.getElementById('goWeeklyBtn').onclick = showWeeklyPage;
+  document.getElementById('backToMainBtn').onclick = showMainPage;
+
+  // ---------- weekly page rendering ----------
+  const newActivityInput = document.getElementById('newActivityInput');
+  const addActivityBtn = document.getElementById('addActivityBtn');
+  function submitActivity(){
+    const v = newActivityInput.value.trim();
+    if(!v) return;
+    addPoolActivity(v);
+    newActivityInput.value='';
+  }
+  addActivityBtn.onclick = submitActivity;
+  newActivityInput.addEventListener('keydown', e=>{ if(e.key==='Enter') submitActivity(); });
+
+  document.getElementById('prevWeekBtn').onclick = ()=>{
+    viewWeekMonday.setDate(viewWeekMonday.getDate()-7);
+    renderWeeklyPage();
+  };
+  document.getElementById('nextWeekBtn').onclick = ()=>{
+    viewWeekMonday.setDate(viewWeekMonday.getDate()+7);
+    renderWeeklyPage();
+  };
+
+  const toggleWeekRetroBtn = document.getElementById('toggleWeekRetroBtn');
+  const weekRetroArea = document.getElementById('weekRetroArea');
+  const weekRetroTextarea = document.getElementById('weekRetroTextarea');
+  toggleWeekRetroBtn.onclick = ()=>{
+    const opening = weekRetroArea.style.display === 'none';
+    weekRetroArea.style.display = opening ? 'block' : 'none';
+    if(opening) weekRetroTextarea.focus();
+  };
+  weekRetroTextarea.addEventListener('input', ()=>{
+    const wk = weekKeyOf(viewWeekMonday);
+    ensureWeek(wk);
+    data.weeks[wk].retro = weekRetroTextarea.value;
+    saveData();
+    refreshWeekRetroButton();
+  });
+
+  function refreshWeekRetroButton(){
+    const wk = weekKeyOf(viewWeekMonday);
+    const w = data.weeks[wk];
+    const hasRetro = w && w.retro && w.retro.trim();
+    toggleWeekRetroBtn.textContent = hasRetro ? '📝 이번주 회고 (작성됨) — 보기/수정' : '📝 이번주 회고 남기기';
+    weekRetroTextarea.value = (w && w.retro) || '';
+  }
+
+  const toggleWeekArchiveBtn = document.getElementById('toggleWeekArchiveBtn');
+  const weekRetroArchive = document.getElementById('weekRetroArchive');
+  toggleWeekArchiveBtn.onclick = ()=>{
+    const opening = weekRetroArchive.style.display === 'none';
+    weekRetroArchive.style.display = opening ? 'block' : 'none';
+    if(opening) renderWeekRetroArchive();
+  };
+
+  function renderWeekRetroArchive(){
+    weekRetroArchive.innerHTML = '';
+    const weekKeys = Object.keys(data.weeks)
+      .filter(wk=> data.weeks[wk].retro && data.weeks[wk].retro.trim())
+      .sort().reverse();
+    if(!weekKeys.length){
+      weekRetroArchive.innerHTML = '<div class="empty-msg">아직 남긴 주간 회고가 없습니다.</div>';
+      return;
+    }
+    weekKeys.forEach(wk=>{
+      const monday = new Date(wk+'T00:00:00');
+      const sunday = dateForWeekday(monday, 6);
+      const item = document.createElement('div');
+      item.className='retro-archive-item';
+      const dateEl = document.createElement('div');
+      dateEl.className='retro-archive-date';
+      dateEl.textContent = keyOf(monday)+' ~ '+keyOf(sunday);
+      const snippet = document.createElement('div');
+      snippet.className='retro-archive-snippet';
+      const text = data.weeks[wk].retro.trim();
+      snippet.textContent = text.length>100 ? text.slice(0,100)+'…' : text;
+      item.appendChild(dateEl);
+      item.appendChild(snippet);
+      item.onclick = ()=>{
+        viewWeekMonday = mondayOf(monday);
+        renderWeeklyPage();
+        weekRetroArea.style.display = 'block';
+      };
+      weekRetroArchive.appendChild(item);
+    });
+  }
+
+  function renderWeeklyPage(){
+    const wk = weekKeyOf(viewWeekMonday);
+    ensureWeek(wk);
+
+    // week range title
+    const sunday = dateForWeekday(viewWeekMonday, 6);
+    document.getElementById('weekRangeTitle').textContent =
+      pad(viewWeekMonday.getMonth()+1)+'.'+pad(viewWeekMonday.getDate())+' ~ '+pad(sunday.getMonth()+1)+'.'+pad(sunday.getDate());
+
+    // activity pool list
+    const poolList = document.getElementById('activityPoolList');
+    const poolEmptyMsg = document.getElementById('poolEmptyMsg');
+    poolList.innerHTML = '';
+    if(!data.activityPool.length){
+      poolEmptyMsg.style.display='block';
+    } else {
+      poolEmptyMsg.style.display='none';
+    }
+    data.activityPool.forEach(act=>{
+      const postit = document.createElement('div');
+      postit.className='postit';
+
+      const head = document.createElement('div');
+      head.className='postit-head';
+      const textInput = document.createElement('input');
+      textInput.className='pixel-input';
+      textInput.value = act.text;
+      textInput.maxLength = 40;
+      textInput.oninput = ()=>{ act.text = textInput.value; saveData(); };
+      const delBtn = document.createElement('button');
+      delBtn.className='icon-btn';
+      delBtn.textContent='✕';
+      delBtn.title='활동 삭제';
+      delBtn.onclick = ()=>{ deletePoolActivity(act.id); };
+      head.appendChild(textInput);
+      head.appendChild(delBtn);
+      postit.appendChild(head);
+
+      const dayRow = document.createElement('div');
+      dayRow.className='day-toggle-row';
+      DAY_CODES.forEach((code, i)=>{
+        const btn = document.createElement('button');
+        const active = data.weeks[wk].assignments[code].includes(act.id);
+        btn.className = 'day-toggle-btn' + (active? ' active':'');
+        btn.textContent = DAY_LABELS[i];
+        btn.onclick = ()=> toggleAssignment(wk, code, act.id);
+        dayRow.appendChild(btn);
+      });
+      postit.appendChild(dayRow);
+
+      poolList.appendChild(postit);
+    });
+
+    // week overview
+    const overview = document.getElementById('weekOverview');
+    overview.innerHTML = '';
+    const tKey = todayKey();
+    DAY_CODES.forEach((code, i)=>{
+      const dObj = dateForWeekday(viewWeekMonday, i);
+      const dk = keyOf(dObj);
+      const row = document.createElement('div');
+      row.className='week-day-row';
+      const label = document.createElement('div');
+      label.className='week-day-label' + (dk===tKey? ' today':'');
+      label.innerHTML = '<b>'+DAY_LABELS[i]+'</b>'+pad(dObj.getMonth()+1)+'.'+pad(dObj.getDate());
+      row.appendChild(label);
+
+      const chips = document.createElement('div');
+      chips.className='week-day-chips';
+      const ids = data.weeks[wk].assignments[code];
+      if(!ids.length){
+        const empty = document.createElement('span');
+        empty.className='week-day-empty';
+        empty.textContent='—';
+        chips.appendChild(empty);
+      } else {
+        ids.forEach(id=>{
+          const act = data.activityPool.find(a=>a.id===id);
+          const questInDay = (data.days[dk] && data.days[dk].quests || []).find(q=>q.weekly && q.weeklyRefId===id);
+          const doneFlag = questInDay && questInDay.subtasks && questInDay.subtasks[0] && questInDay.subtasks[0].done;
+          const chip = document.createElement('span');
+          chip.className='week-chip';
+          chip.textContent = (doneFlag? '✔ ':'') + (act? act.text : '(삭제된 활동)');
+          chips.appendChild(chip);
+        });
+      }
+      row.appendChild(chips);
+      overview.appendChild(row);
+    });
+
+    refreshWeekRetroButton();
+  }
+
   initTheme();
   renderDateDisplay();
+  refreshTodayRetroButton();
   renderToday();
 })();
 </script>

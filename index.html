@@ -184,7 +184,6 @@
   .principles-rule{ width:64px; height:2px; background:var(--stamp); margin:16px auto 0; }
   .principles-body{ font-family:Georgia,'Noto Serif KR',serif; font-size:15.5px; line-height:2; color:var(--ink); text-align:justify; }
   .principles-body p{ margin:0 0 18px; }
-  .principles-body p:first-of-type::first-letter{ font-size:44px; font-weight:700; float:left; line-height:1; padding:4px 8px 0 0; color:var(--stamp); font-family:Georgia,serif; }
   .principles-edit-btn{ position:absolute; top:16px; right:16px; }
   .principles-textarea{ width:100%; min-height:320px; padding:16px; background:var(--paper); border:1px solid var(--line); border-radius:6px; font-family:Georgia,'Noto Serif KR',serif; font-size:14.5px; line-height:1.8; resize:vertical; outline:none; }
 
@@ -744,13 +743,10 @@ function diaryFormModalHTML(initial){
   const date = (initial && initial.date) || todayKey();
   const val = (k, d='') => (initial && initial[k] !== undefined) ? initial[k] : d;
 
-  const selectField = (name, opts, current, label) => `
+  const textField = (name, placeholder, current, label) => `
     <div class="field">
       <label class="field-label mono">${label}</label>
-      <select name="${name}">
-        <option value="">선택 안 함</option>
-        ${opts.map(o => `<option value="${esc(o)}" ${current===o?'selected':''}>${o}</option>`).join('')}
-      </select>
+      <input type="text" name="${name}" placeholder="${esc(placeholder)}" value="${esc(current)}" />
     </div>`;
 
   return `
@@ -776,17 +772,14 @@ function diaryFormModalHTML(initial){
               </div>
             </div>
             <div class="field-row">
-              ${selectField('weather', WEATHER_OPTS, val('weather'), 'WEATHER')}
-              <div class="field">
-                <label class="field-label mono">체온 (°C)</label>
-                <input type="number" step="0.1" name="temp" placeholder="36.5" value="${esc(val('temp'))}" />
-              </div>
+              ${textField('weather', '예: 맑음, 선선함', val('weather'), 'WEATHER')}
+              ${textField('temp', '예: 36.5°C, 미열 있음', val('temp'), '체온')}
             </div>
             <div class="field-row">
-              ${selectField('sleep', SCALE_OPTS, val('sleep'), '수면질')}
-              ${selectField('condition', SCALE_OPTS, val('condition'), '컨디션')}
+              ${textField('sleep', '예: 6시간, 자주 깸', val('sleep'), '수면질')}
+              ${textField('condition', '예: 피곤함, 두통', val('condition'), '컨디션')}
             </div>
-            ${selectField('mood', MOOD_OPTS, val('mood'), '기분')}
+            ${textField('mood', '예: 차분함, 살짝 들뜸', val('mood'), '기분')}
             ${QUESTIONS.map(q => `
               <div class="field">
                 <label class="field-label mono" style="text-transform:none;font-size:12px;line-height:1.5;">${esc(q.label)}${q.sub ? ` <span class="field-sub">${esc(q.sub)}</span>` : ''}</label>
