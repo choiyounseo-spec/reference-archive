@@ -68,6 +68,17 @@
   .cal-dot{ flex:1; display:flex; align-items:center; justify-content:center; }
   .cal-dot span{ width:5px; height:5px; border-radius:99px; background:var(--sage); display:block; }
   .cal-more{ position:absolute; bottom:3px; right:3px; font-size:9px; color:#fff; background:var(--ink); border-radius:99px; padding:0 4px; }
+  .io-badge{ position:absolute; font-family:'IBM Plex Mono','Courier New',monospace; font-size:8.5px; font-weight:700; letter-spacing:.03em; padding:1px 4px; border-radius:3px; color:#fff; z-index:2; line-height:1.4; }
+  .io-badge.input{ background:var(--sage); }
+  .io-badge.output{ background:var(--stamp); }
+  .io-pill{ display:inline-flex; align-items:center; font-family:'IBM Plex Mono','Courier New',monospace; font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 7px; border-radius:3px; color:#fff; }
+  .io-pill.input{ background:var(--sage); }
+  .io-pill.output{ background:var(--stamp); }
+  .io-choice{ display:flex; gap:8px; }
+  .io-choice label{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border:1px solid var(--line); border-radius:5px; font-size:12.5px; color:var(--ink-soft); cursor:pointer; }
+  .io-choice input{ display:none; }
+  .io-choice input:checked + span{ color:inherit; }
+  .io-choice label:has(input:checked){ border-color:var(--ink); background:var(--paper-dark); color:var(--ink); font-weight:600; }
 
   /* archive */
   .search-bar{ display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--card); border:1px solid var(--line); border-radius:6px; margin-bottom:14px; }
@@ -465,6 +476,9 @@ function calendarHTML(){
     } else if (items){
       inner += `<div class="cal-dot"><span></span></div>`;
     }
+    if (rep && rep.kind){
+      inner += `<span class="io-badge ${rep.kind}" style="top:2px;right:2px;">${rep.kind==='input'?'IN':'OUT'}</span>`;
+    }
     if (items && items.length > 1){
       inner += `<span class="cal-more">+${items.length-1}</span>`;
     }
@@ -502,7 +516,10 @@ function dayListHTML(date){
               <div class="daylist-thumb">${it.thumb ? `<img src="${it.thumb}" alt=""/>` : '🖼'}</div>
               <div style="min-width:0;flex:1;">
                 <div class="daylist-note ${it.note?'':'empty'}">${it.note ? esc(it.note) : '메모 없음'}</div>
-                ${it.isRep ? `<span class="daylist-rep">★ 대표</span>` : ''}
+                <div style="display:flex;gap:5px;margin-top:3px;">
+                  ${it.isRep ? `<span class="daylist-rep">★ 대표</span>` : ''}
+                  ${it.kind ? `<span class="io-pill ${it.kind}" style="position:static;font-size:9px;padding:1px 5px;">${it.kind==='input'?'IN':'OUT'}</span>` : ''}
+                </div>
               </div>
             </button>
           `).join('')}
@@ -558,6 +575,7 @@ function cardHTML(it){
   return `
     <button class="idx-card" data-act="open" data-id="${it.id}">
       <div class="idx-thumb">${it.thumb ? `<img src="${it.thumb}" alt=""/>` : '🖼'}</div>
+      ${it.kind ? `<span class="io-badge ${it.kind}" style="top:8px;left:8px;">${it.kind==='input'?'IN':'OUT'}</span>` : ''}
       <div class="idx-body">
         ${it.isRep ? `<span class="idx-rep">★ 대표 메모</span>` : ''}
         <div class="idx-note ${it.note?'':'empty'}">${noteHTML}</div>
@@ -615,6 +633,13 @@ function formModalHTML(initial){
               ${img ? `<button type="button" class="remove-img" data-act="remove-image">이미지 제거</button>` : ''}
             </div>
             <div class="field">
+              <label class="field-label mono">TYPE</label>
+              <div class="io-choice">
+                <label><input type="radio" name="kind" value="input" ${initial && initial.kind==='input' ? 'checked' : ''}/><span>📥 INPUT</span></label>
+                <label><input type="radio" name="kind" value="output" ${initial && initial.kind==='output' ? 'checked' : ''}/><span>📤 OUTPUT</span></label>
+              </div>
+            </div>
+            <div class="field">
               <label class="field-label mono">NOTE</label>
               <textarea name="note" rows="4" placeholder="오늘 본 것, 느낀 것, 기록하고 싶은 인풋을 적어두세요">${esc(note)}</textarea>
             </div>
@@ -661,6 +686,7 @@ function detailModalHTML(){
             <div style="display:flex;align-items:center;gap:8px;">
               <span class="stamp">${stampLabel(e.date)}</span>
               ${e.isRep ? `<span class="idx-rep">★ 대표</span>` : ''}
+              ${e.kind ? `<span class="io-pill ${e.kind}">${e.kind==='input'?'INPUT':'OUTPUT'}</span>` : ''}
             </div>
             <div class="detail-actions">
               <button class="btn-ghost" data-act="edit-entry">✎</button>
@@ -1068,12 +1094,13 @@ async function onSaveForm(e){
   const note = (fd.get('note') || '').trim();
   const tags = (fd.get('tags') || '').split(',').map(t=>t.trim()).filter(Boolean).slice(0,8);
   const isRep = fd.get('isRep') === 'on';
+  const kind = fd.get('kind') || '';
   const initial = state.modal.initial;
   const id = (initial && initial.id) || uid();
   const image = state.pendingImage ? state.pendingImage.full : (initial ? initial.image : null);
   const thumb = state.pendingImage ? state.pendingImage.thumb : (initial ? initial.thumb : null);
 
-  const entry = { id, date, note, tags, image: image||null, thumb: thumb||null, isRep, updatedAt: Date.now() };
+  const entry = { id, date, note, tags, image: image||null, thumb: thumb||null, isRep, kind, updatedAt: Date.now() };
   await dbPut('entries', entry);
 
   if (isRep){
